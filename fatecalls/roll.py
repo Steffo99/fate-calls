@@ -15,8 +15,27 @@ class Fate:
         self.bonus = bonus
 
     @property
+    def rolled(self):
+        total = 0
+        for roll in self.rolls:
+            total += roll.result
+        return Ladder(total)
+
+    @property
     def result(self):
         total = self.bonus
         for roll in self.rolls:
             total += roll.result
-        return total
+        return Ladder(total)
+
+    def telegramify(self) -> str:
+        string = ""
+        for roll in self.rolls:
+            if roll.result == -1:
+                string += "🔴"
+            elif roll.result == 0:
+                string += "⚫️"
+            else:
+                string += "🔵"
+        string += f" ({self.rolled.number()}) + {self.bonus.telegramify()} = {self.result.telegramify()}"
+        return string

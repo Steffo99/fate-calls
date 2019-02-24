@@ -2,13 +2,18 @@ class Aspect:
     def __init__(self, name):
         self.name = name
 
+    def telegramify(self) -> str:
+        raise NotImplementedError()
+
 
 class TemporaryAspect(Aspect):
-    pass
+    def telegramify(self):
+        return f"<i>{self.name}</i>"
 
 
 class PermanentAspect(Aspect):
-    pass
+    def telegramify(self):
+        return f"{self.name}"
 
 
 class AspectList(list):
