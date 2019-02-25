@@ -6,8 +6,10 @@ import os
 import re
 import typing
 from fatecalls.character import CharacterAspects, CharacterApproaches, Character
-from fatecalls.aspect import PermanentAspect
+from fatecalls.aspect import PermanentAspect, TemporaryAspect
 from fatecalls.roll import Fate
+import logging
+logging.basicConfig()
 
 
 characters: typing.List[Character] = []
@@ -22,7 +24,7 @@ def find_character(name: str) -> typing.Optional[Character]:
     return None
 
 
-def reply(bot: telegram.Bot, update: telegram.Update, string: str, ignore_escaping=False, disable_web_page_preview=True, **kwargs) -> typing.Optional[telegram.Message]:
+def reply(bot: telegram.Bot, update: telegram.Update, string: str, disable_web_page_preview=True) -> typing.Optional[telegram.Message]:
     while True:
         try:
             return bot.send_message(update.message.chat.id, string,
@@ -82,7 +84,11 @@ def cmd_newchar(bot: telegram.Bot, update: telegram.Update):
 
 @delete_invoking
 def cmd_active(bot: telegram.Bot, update: telegram.Update):
-    name = update.message.text.split(" ", 1)[1]
+    try:
+        name = update.message.text.split(" ", 1)[1]
+    except IndexError:
+        reply(bot, update, '⚠️ Non hai specificato un personaggio.')
+        return
     user_id = update.effective_user.id
     character = find_character(name)
     if character is None:
@@ -97,7 +103,7 @@ def with_selected(func):
         if update.message.reply_to_message:
             user_id = update.message.reply_to_message.from_user.id
         else:
-            user_id = update.from_user.id
+            user_id = update.message.from_user.id
         try:
             character = active[user_id]
         except KeyError:
@@ -107,49 +113,49 @@ def with_selected(func):
     return new_func
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_show(bot: telegram.Bot, update: telegram.Update, character: Character):
     reply(bot, update, f'ℹ️ Il tuo personaggio:\n{character.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_careful(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.careful)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Careful]\n{roll.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_clever(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.clever)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Clever]\n{roll.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_flashy(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.flashy)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Flashy]\n{roll.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_forceful(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.forceful)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Forceful]\n{roll.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_quick(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.quick)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Quick]\n{roll.telegramify()}')
 
 
-@delete_invoking
 @with_selected
+@delete_invoking
 def cmd_sneaky(bot: telegram.Bot, update: telegram.Update, character: Character):
     roll = Fate(character.approaches.sneaky)
     reply(bot, update, f'🎲 <b>{character.name}</b> [Sneaky]\n{roll.telegramify()}')
@@ -159,7 +165,33 @@ def cmd_sneaky(bot: telegram.Bot, update: telegram.Update, character: Character)
 def cmd_clean(bot: telegram.Bot, update: telegram.Update):
     for character in characters:
         character.aspects.other.clean()
-    reply(bot, update, f'🌬 Rimossi tutti gli aspetti temporanei da tutti i personaggi.')
+    reply(bot, update, f'🌬 Rimossi tutti gli Aspects temporanei da tutti i personaggi.')
+
+
+@with_selected
+@delete_invoking
+def cmd_temp(bot: telegram.Bot, update: telegram.Update, character: Character):
+    try:
+        name = update.message.text.split(" ", 1)[1]
+    except IndexError:
+        reply(bot, update, "⚠️ Non hai dato un nome all'Aspect.")
+        return
+    aspect = TemporaryAspect(name)
+    character.aspects.other.append(aspect)
+    reply(bot, update, f"❗️ Nuovo Aspect aggiunto a <b>{character.name}</b>: {aspect.telegramify()}")
+
+
+@with_selected
+@delete_invoking
+def cmd_perma(bot: telegram.Bot, update: telegram.Update, character: Character):
+    try:
+        name = update.message.text.split(" ", 1)[1]
+    except IndexError:
+        reply(bot, update, "⚠️ Non hai dato un nome all'Aspect.")
+        return
+    aspect = PermanentAspect(name)
+    character.aspects.other.append(aspect)
+    reply(bot, update, f"❗️ Nuovo Aspect aggiunto a <b>{character.name}</b>: {aspect.telegramify()}")
 
 
 if __name__ == "__main__":
@@ -173,6 +205,9 @@ if __name__ == "__main__":
     u.dispatcher.add_handler(telegram.ext.CommandHandler("forceful", cmd_forceful))
     u.dispatcher.add_handler(telegram.ext.CommandHandler("quick", cmd_quick))
     u.dispatcher.add_handler(telegram.ext.CommandHandler("sneaky", cmd_sneaky))
+    u.dispatcher.add_handler(telegram.ext.CommandHandler("clean", cmd_clean))
+    u.dispatcher.add_handler(telegram.ext.CommandHandler("temp", cmd_temp))
+    u.dispatcher.add_handler(telegram.ext.CommandHandler("perma", cmd_perma))
     u.start_polling()
     print("Bot started.")
     u.idle()
