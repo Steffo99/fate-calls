@@ -8,12 +8,12 @@ class Aspect:
 
 class TemporaryAspect(Aspect):
     def telegramify(self):
-        return f"<i>{self.name}</i>"
+        return f"[{self.name}]"
 
 
 class PermanentAspect(Aspect):
     def telegramify(self):
-        return f"{self.name}"
+        return f"<b>[{self.name}]</b>"
 
 
 class AspectList(list):

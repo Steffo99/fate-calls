@@ -55,12 +55,11 @@ def delete_invoking(func):
     return new_func
 
 
-@delete_invoking
 def cmd_newchar(bot: telegram.Bot, update: telegram.Update):
     text = update.message.text
-    match = re.match(r'/newchar "([A-Za-z0-9 \-\']+)" "([A-Za-z0-9 \-\'!?.,;:]+)" ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)', text)
+    match = re.match(r'^\/newchar "(.+)" \[(.+)] ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)', text)
     if match is None:
-        reply(bot, update, '⚠️ Sintassi non valida.\nSintassi: <code>/newchar "(nome)" "(coreaspect)" (careful) (clever) (flashy) (forceful) (quick) (sneaky)</code>')
+        reply(bot, update, '⚠️ Sintassi non valida.\nSintassi: <code>/newchar "(nome)" [(coreaspect)] (careful) (clever) (flashy) (forceful) (quick) (sneaky)</code>')
         return
     name = match.group(1)
     core = match.group(2)
@@ -72,7 +71,7 @@ def cmd_newchar(bot: telegram.Bot, update: telegram.Update):
         quick = int(match.group(7))
         sneaky = int(match.group(8))
     except ValueError:
-        reply(bot, update, '⚠️ Un parametro non è un numero.\nSintassi: <code>/newchar "(nome)" "(coreaspect)" (careful) (clever) (flashy) (forceful) (quick) (sneaky)</code>')
+        reply(bot, update, '⚠️ Un parametro non è un numero.\nSintassi: <code>/newchar "(nome)"  [(coreaspect)] (careful) (clever) (flashy) (forceful) (quick) (sneaky)</code>')
         return
     aspects = CharacterAspects(PermanentAspect(core))
     approaches = CharacterApproaches(careful, clever, flashy, forceful, quick, sneaky)
